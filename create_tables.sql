@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS episodes (
     published DATE,
     duration INTERVAL,
     questions TEXT,
+    transcribed BOOLEAN,
     transcript JSONB
 );
 

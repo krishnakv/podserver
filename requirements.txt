@@ -2,3 +2,5 @@ flask
 openai
 feedreader
 psycopg2
+feedparser
+azure-cognitiveservices-speech

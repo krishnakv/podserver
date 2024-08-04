@@ -1,45 +1,45 @@
 import json
-
 import feedparser
 import psycopg2
 from psycopg2 import sql
 
 
-def write_to_postgresql(data):
+def write_to_postgresql(items):
     # Read configuration from JSON file
     with open("config.json") as config_file:
         config = json.load(config_file)
 
-    # Connect to the PostgreSQL database
+    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' host='{config["HOST"]}' port='{config["PORT"]}'"
 
-    conn = psycopg2.connect(**config)
+    # Connect to the PostgreSQL database
+    conn = psycopg2.connect(connection_string)
     cursor = conn.cursor()
 
     # Prepare and execute an SQL INSERT statement
     insert_query = sql.SQL(
-        "INSERT INTO your_table (column1, column2, ...) VALUES (%s, %s, ...);"
+        "INSERT INTO episodes (podcastid, episodeid, title, summary, url, authors, published, duration, questions, transcribed, transcript) VALUES (1, %s, %s, %s, %s, %s, %s, %s, NULL, FALSE, NULL);"
     ).format(
-        sql.Identifier("your_table")  # Replace with the actual table name
+        sql.Identifier("episodes")  # Replace with the actual table name
     )
 
-    for item in data:
-        cursor.execute(insert_query, tuple(item.values()))
+    for item in items:
+        entry = {
+            "episodeid": item["itunes_episode"],
+            "title": item["itunes_title"],
+            "summary": item["summary"],
+            "url": item["links"][1]["href"],
+            "authors": item["author"],
+            "published": item["published"],
+            "duration": item["itunes_duration"]
+        }
+        cursor.execute(insert_query, tuple(entry.values()))
 
     # Commit the transaction and close the connection
     conn.commit()
     cursor.close()
     conn.close()
 
-
-# Example usage
-data = [
-    {"column1": "value1", "column2": "value2"},
-    {"column1": "value3", "column2": "value4"},
-]
-write_to_postgresql(data)
-
-
-def parse_rss_feed(file_path):
+def parse_write_rss_feed(file_path):
     """
     Reads an RSS or Atom feed from a specified file path, parses it using feedparser,
     and prints out the items listed in the feed.
@@ -56,8 +56,9 @@ def parse_rss_feed(file_path):
     # Check if the parsed content has an 'items' key, which is typical for both RSS and Atom feeds
     if "items" in rss_feed:
         # Iterate through each item in the items list
-        for item in rss_feed["items"]:
-            print(item)  # Print out each item
+        # for item in rss_feed["items"]:
+        #     print(item)  # Print out each item
+        write_to_postgresql(rss_feed["items"])
     else:
         print("The feed does not contain any items.")
 
@@ -68,4 +69,4 @@ if __name__ == "__main__":
     xml_file_path = "./gvtxUiIf.rss"
 
     # Call the function to parse and print the feed items
-    parse_rss_feed(xml_file_path)
+    parse_write_rss_feed(xml_file_path)
