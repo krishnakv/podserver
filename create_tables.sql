@@ -31,8 +31,9 @@ CREATE TABLE IF NOT EXISTS episodes (
     authors VARCHAR(50),
     published DATE,
     duration INTERVAL,
-    questions TEXT,
+    questions JSONB,
     transcribed BOOLEAN,
-    transcript JSONB
+    transcript JSONB,
+    transcripttext TEXT
 );
 
