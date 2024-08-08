@@ -15,17 +15,18 @@ A JSON response containing details of each podcast, including title, host, and
 release date.
 """
 
-from flask import Flask, render_template, request, Response, jsonify
 import json
+
+from flask import Flask, Response, jsonify, render_template, request
 from openai import AzureOpenAI
 from data_repository import DataRepository
 
 app = Flask(__name__)
 app.config.from_file("config.json", load=json.load)
 client = AzureOpenAI(
-    api_key = app.config["LLM_API_KEY"],
-    api_version = app.config["LLM_API_VERSION"],
-    azure_endpoint = app.config["LLM_TARGET_URI"]
+    api_key=app.config["LLM_API_KEY"],
+    api_version=app.config["LLM_API_VERSION"],
+    azure_endpoint=app.config["LLM_TARGET_URI"],
 )
 db_repo_config = {"DB_NAME": app.config["DB_NAME"],
                     "DB_HOST": app.config["DB_HOST"],
@@ -33,14 +34,17 @@ db_repo_config = {"DB_NAME": app.config["DB_NAME"],
                     "DB_PASSWORD": app.config["DB_PASSWORD"],
                     "DB_PORT": app.config["DB_PORT"]}
 
-@app.route('/')
+
+@app.route("/")
 def index() -> str:
     """Render the main game page."""
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/about', methods=['GET'])
-async def about(): 
-  return {"app_version": "0.2.1"}, 200
+
+@app.route("/about", methods=["GET"])
+async def about():
+    return {"app_version": "0.2.1"}, 200
+
 
 """
 The `get_podcasts` function, handles GET requests at the `/podcasts` endpoint.
@@ -69,11 +73,13 @@ A JSON response containing details of each podcast, including title, host, and r
 #     podcasts = [{"id": "1", "name": "Hanselminutes"}]
 #     return jsonify({"podcasts": podcasts})
 
+
 @app.route("/podcasts/<pid>/episodes", methods=["GET"])
 def get_all_episodes(pid):
     # retrieve all episode details from the DB  
     episodes = DataRepository(db_repo_config).get_episodes(pid)
     return jsonify(episodes)
+
 
 @app.route("/podcasts/<pid>/episodes/<int:eid>", methods=["GET"])
 def get_episode(pid, eid):
@@ -81,19 +87,79 @@ def get_episode(pid, eid):
     episode = DataRepository(db_repo_config).get_episode(pid, eid)
     return jsonify(episode)
 
-@app.route('/ask', methods=['GET'])
+
+@app.route("/ask", methods=["GET"])
 def ask():
-  question = request.args.get('q')
-  def generate_answer(question):
-    response = client.chat.completions.create(
-      model="gpt-4o",
-      messages=[{"role": "system", "content": "Provide your response in 100 words or less."}, {"role": "user", "content": question}],
-      stream=True,
-    )
-    for chunk in response:
-      yield f'data: {chunk.choices[0].delta.content or ""}\n\n'
-      
-  return Response(generate_answer(question), mimetype='text/event-stream')
+    question = request.args.get("q")
+
+    def generate_answer(question):
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Provide your response in 100 words or less.",
+                },
+                {"role": "user", "content": question},
+            ],
+            stream=True,
+        )
+        for chunk in response:
+            yield f'data: {chunk.choices[0].delta.content or ""}\n\n'
+
+    return Response(generate_answer(question), mimetype="text/event-stream")
+
+
+@app.route("/askfulltext", methods=["GET"])
+def askfulltext():
+    question = request.args.get("q")
+    podcast_id = request.args.get("pid")
+    episode_id = request.args.get("eid")
+
+    # retrieve transcript from DB for context
+
+    def generate_answer(question):
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Provide your response in 100 words or less.",
+                },
+                {"role": "user", "content": question},
+            ],
+            stream=True,
+        )
+        for chunk in response:
+            yield f'data: {chunk.choices[0].delta.content or ""}\n\n'
+
+    return Response(generate_answer(question), mimetype="text/event-stream")
+
+
+@app.route("/askrag", methods=["GET"])
+def askrag():
+    question = request.args.get("q")
+    podcast_id = request.args.get("pid")
+    episode_id = request.args.get("eid")
+
+    # retrieve data from RAG DB (PGVector)
+
+    def generate_answer(question):
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "Provide your response in 100 words or less.",
+                },
+                {"role": "user", "content": question},
+            ],
+            stream=True,
+        )
+        for chunk in response:
+            yield f'data: {chunk.choices[0].delta.content or ""}\n\n'
+
+    return Response(generate_answer(question), mimetype="text/event-stream")
 
 
 if __name__ == "__main__":

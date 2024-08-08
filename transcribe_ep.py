@@ -118,6 +118,7 @@ def create_questions_list(config, title, transcript_text):
                 "content": QUESTIONS_USER_PROMPT % (title, transcript_text),
             },
         ],
+        response_format={"type": "json_object"},
         stream=False,
     )
 
@@ -169,7 +170,7 @@ def transcribe(podcastid, episodeid, title, audio_url):
     # Prepare and execute an SQL UPDATE statement
     update_query = """
     UPDATE episodes
-    SET transcribed = TRUE, transcript = %s, transcripttext = %s
+    SET questions = %s, transcribed = TRUE, transcript = %s, transcripttext = %s
     WHERE podcastid = %s AND episodeid = %s;
     """
 
@@ -276,9 +277,7 @@ def transcribe(podcastid, episodeid, title, audio_url):
                 # Get list of questions generated from openai and extract the list
                 # for inserting into the database
                 questions = create_questions_list(config, title, transcripttext)
-                list_of_questions = json.dumps(
-                    {"questions": questions.choices[0].message.content}
-                )
+                list_of_questions = json.dumps(questions.choices[0].message.content)
 
                 open("questions_json.txt", "w").write(list_of_questions)
 
@@ -288,7 +287,7 @@ def transcribe(podcastid, episodeid, title, audio_url):
                     update_query,
                     (
                         list_of_questions,
-                        transcript_json,
+                        results.content.decode("utf-8"),
                         transcripttext,
                         podcastid,
                         episodeid,
