@@ -33,7 +33,7 @@ def select_from_episodes_with_episodeid(episodeid):
     with open("config.json") as config_file:
         config = json.load(config_file)
 
-    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' host='{config["HOST"]}' port='{config["PORT"]}'"
+    connection_string = f"dbname='{config["DB_NAME"]}' user='{config["DB_USER"]}' host='{config["DB_HOST"]}' port='{config["DB_PORT"]}'"
 
     # Connect to the PostgreSQL database
     conn = psycopg2.connect(connection_string)
@@ -165,7 +165,7 @@ def transcribe(podcastid, episodeid, title, audio_url):
     with open("config.json") as config_file:
         config = json.load(config_file)
 
-    connection_string = f"dbname='{config['DBNAME']}' user='{config['USER']}' host='{config['HOST']}' port='{config['PORT']}'"
+    connection_string = f"dbname='{config['DB_NAME']}' user='{config['DB_USER']}' host='{config['DB_HOST']}' port='{config['DB_PORT']}'"
 
     # Prepare and execute an SQL UPDATE statement
     update_query = """

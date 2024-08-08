@@ -7,11 +7,7 @@ class DataRepository:
         self.config = config
 
     def get_episodes(self, pid):
-        conn = psycopg2.connect(database=self.config["DB_NAME"],
-                                host=self.config["DB_HOST"],
-                                user=self.config["DB_USER"],
-                                password=self.config["DB_PASSWORD"],
-                                port=self.config["DB_PORT"])
+        conn = self._get_conn()
 
         cur = conn.cursor()
 
@@ -35,11 +31,7 @@ class DataRepository:
 
 
     def get_episode(self, pid, eid):
-        conn = psycopg2.connect(database=self.config["DB_NAME"],
-                                host=self.config["DB_HOST"],
-                                user=self.config["DB_USER"],
-                                password=self.config["DB_PASSWORD"],
-                                port=self.config["DB_PORT"])
+        conn = self._get_conn()
 
         cur = conn.cursor()
 
@@ -54,3 +46,10 @@ class DataRepository:
         conn.close()
         
         return episode
+    
+    def _get_conn(self):
+        return psycopg2.connect(database=self.config["DB_NAME"],
+                        host=self.config["DB_HOST"],
+                        user=self.config["DB_USER"],
+                        # password=self.config["DB_PASSWORD"],
+                        port=self.config["DB_PORT"])
