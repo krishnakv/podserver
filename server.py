@@ -19,6 +19,7 @@ import json
 
 from flask import Flask, Response, jsonify, render_template, request
 from openai import AzureOpenAI
+from data_repository import DataRepository
 
 app = Flask(__name__)
 app.config.from_file("config.json", load=json.load)
@@ -27,38 +28,11 @@ client = AzureOpenAI(
     api_version=app.config["LLM_API_VERSION"],
     azure_endpoint=app.config["LLM_TARGET_URI"],
 )
-
-# HACK: this should come from the db repository layer
-episodes = [
-    {
-        "id": 955,
-        "title": "Creating Tools for Thought with Andy Matuschak",
-        "summary": "Andy Matuschak is an independent researcher who explores user interfaces that expand what people can think and do. He sits down with Scott to talk about how we learn, why we learn, and what learning means in a world of AI and AGI.",
-        "transcript": "",
-        "sample-questions": [""],
-    },
-    {
-        "id": 954,
-        "title": "Defining Developer Relations with Angie Jones",
-        "summary": "Scott's in Berlin this week and talks to Angie Jones, Global Vice President of Developer Relations, TBD @ Block, about the job of Developer Relations. What does a DevRel person even do? Are they just hanging out in the Delta Lounge or are the Developers? What does it mean to Advocate versus Evangelize?",
-        "transcript": "",
-        "sample-questions": [""],
-    },
-    {
-        "id": 953,
-        "title": "Computer Science Visualizations with Sam Rose",
-        "summary": "Sam Rose creates visual introductions to computer science topics. Each post takes about a month to make, and he tries to cover foundational topics in a way that's accessible to beginners. Scott chats with Sam about the how and why of making such bespoke and sophisticated blog posts.",
-        "transcript": "",
-        "sample-questions": [""],
-    },
-    {
-        "id": 952,
-        "title": "Introducing .NET Aspire with Damian Edwards",
-        "summary": ".NET Aspire has folks talking - but why? What is .NET Aspire and what does it me for the average ASP.NET developer like me? Is it a thing for Kubernetes? Is it just for .NET Devs? Scott sits down with Damian Edwards to get a sense of what .NET Aspire ahem aspires to do, and where it's heading.",
-        "transcript": "",
-        "sample-questions": [""],
-    },
-]
+db_repo_config = {"DB_NAME": app.config["DB_NAME"],
+                    "DB_HOST": app.config["DB_HOST"],
+                    "DB_USER": app.config["DB_USER"],
+                    "DB_PASSWORD": app.config["DB_PASSWORD"],
+                    "DB_PORT": app.config["DB_PORT"]}
 
 
 @app.route("/")
@@ -102,14 +76,15 @@ A JSON response containing details of each podcast, including title, host, and r
 
 @app.route("/podcasts/<pid>/episodes", methods=["GET"])
 def get_all_episodes(pid):
-    # TODO: retrieve all episode details from the DB
+    # retrieve all episode details from the DB  
+    episodes = DataRepository(db_repo_config).get_episodes(pid)
     return jsonify(episodes)
 
 
 @app.route("/podcasts/<pid>/episodes/<int:eid>", methods=["GET"])
 def get_episode(pid, eid):
-    # TODO: retrieve the episode details with the ID from the DB
-    episode = next(e for e in episodes if e["id"] == eid)
+    # retrieve the episode details with the ID from the DB
+    episode = DataRepository(db_repo_config).get_episode(pid, eid)
     return jsonify(episode)
 
 
