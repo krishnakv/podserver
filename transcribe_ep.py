@@ -33,7 +33,7 @@ def select_from_episodes_with_episodeid(episodeid):
     with open("config.json") as config_file:
         config = json.load(config_file)
 
-    connection_string = f"dbname='{config["DB_NAME"]}' user='{config["DB_USER"]}' host='{config["DB_HOST"]}' port='{config["DB_PORT"]}'"
+    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' host='{config["HOST"]}' port='{config["PORT"]}' password='{config["PASS"]}'"
 
     # Connect to the PostgreSQL database
     conn = psycopg2.connect(connection_string)
@@ -165,7 +165,7 @@ def transcribe(podcastid, episodeid, title, audio_url):
     with open("config.json") as config_file:
         config = json.load(config_file)
 
-    connection_string = f"dbname='{config['DB_NAME']}' user='{config['DB_USER']}' host='{config['DB_HOST']}' port='{config['DB_PORT']}'"
+    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' host='{config["HOST"]}' port='{config["PORT"]}' password='{config["PASS"]}'"
 
     # Prepare and execute an SQL UPDATE statement
     update_query = """
@@ -239,7 +239,7 @@ def transcribe(podcastid, episodeid, title, audio_url):
 
     while not completed:
         # wait for 5 seconds before refreshing the transcription status
-        time.sleep(5)
+        time.sleep(20)
 
         transcription = api.transcriptions_get(transcription_id)
         logging.info(f"Transcriptions status: {transcription.status}")
