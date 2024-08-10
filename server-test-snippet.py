@@ -21,6 +21,7 @@ import sys
 import time
 from enum import Enum
 from io import StringIO
+from string import Template
 
 import psycopg2
 import requests
@@ -47,12 +48,26 @@ class EpisodeAttributes(Enum):
     TRANSCRIPTTEXT = 12
 
 
+with open("config.json") as config_file:
+    config = json.load(config_file)
+
+logging.basicConfig(
+    stream=sys.stdout,
+    level=logging.DEBUG,
+    format="%(asctime)s %(message)s",
+    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
+)
+
+client = AzureOpenAI(
+    api_key=config["LLM_API_KEY"],
+    api_version=config["LLM_API_VERSION"],
+    azure_endpoint=config["LLM_TARGET_URI"],
+)
+
+
 def select_from_episodes_with_episodeid(episodeid):
     # Read configuration from JSON file
-    with open("config.json") as config_file:
-        config = json.load(config_file)
-
-    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' host='{config["HOST"]}' port='{config["PORT"]}'"
+    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' password='{config["PASS"]}' host='{config["HOST"]}' port='{config["PORT"]}'"
 
     # Connect to the PostgreSQL database
     conn = psycopg2.connect(connection_string)
@@ -75,26 +90,54 @@ def select_from_episodes_with_episodeid(episodeid):
     return result[0]
 
 
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.DEBUG,
-    format="%(asctime)s %(message)s",
-    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
-)
+def select_embeddings(text):
+
+    # Generate embedding from the input text
+    embedding = (
+        client.embeddings.create(input=[text], model="text-embedding-ada-002")
+        .data[0]
+        .embedding
+    )
+
+    # Read configuration from JSON file
+    connection_string = f"dbname='{config["DBNAME"]}' user='{config["USER"]}' password='{config["PASS"]}' host='{config["HOST"]}' port='{config["PORT"]}'"
+
+    # Connect to the PostgreSQL database
+    conn = psycopg2.connect(connection_string)
+    cursor = conn.cursor()
+
+    # Construct the SQL query with a join
+    select_query = """
+                   SELECT episodes.episodeid, episodes.title, simple_embeddings.timecode, simple_embeddings.chunk
+                   FROM simple_embeddings
+                   JOIN episodes
+                   ON simple_embeddings.episodeid = episodes.episodeid
+                   ORDER BY embedding <-> %s
+                   LIMIT %s
+                   """
+
+    cursor.execute(
+        select_query,
+        (
+            str(embedding),
+            5,
+        ),
+    )
+
+    # Fetch and print the result of the SELECT statement
+    results = cursor.fetchall()
+
+    # Close the cursor and the connection
+    cursor.close()
+    conn.close()
+
+    return results
 
 
 def askfulltext(q, pid, eid):
     question = q  # request.args.get("q")
     podcast_id = pid  # request.args.get("pid")
     episode_id = eid  # request.args.get("eid")
-
-    with open("config.json") as config_file:
-        config = json.load(config_file)
-    client = AzureOpenAI(
-        api_key=config["LLM_API_KEY"],
-        api_version=config["LLM_API_VERSION"],
-        azure_endpoint=config["LLM_TARGET_URI"],
-    )
 
     # retrieve transcript from DB for context
     record = select_from_episodes_with_episodeid(episode_id)
@@ -147,14 +190,20 @@ def askrag(q, pid, eid):
     podcast_id = pid  # request.args.get("pid")
     episode_id = eid  # request.args.get("eid")
 
-    with open("config.json") as config_file:
-        config = json.load(config_file)
-    client = AzureOpenAI(
-        api_key=config["LLM_API_KEY"],
-        api_version=config["LLM_API_VERSION"],
-        azure_endpoint=config["LLM_TARGET_URI"],
-    )
     # retrieve transcript from DB for context
+    embeddings = select_embeddings(question)
+
+    context_tmpl = Template(
+        "Episode ID ${eid} with the title ${title} at the timecode ${timecode} provides the context #${context}#\n"
+    )
+    context = ""
+
+    for val in embeddings:
+        context += context_tmpl.substitute(
+            eid=val[0], title=val[1], timecode=str(val[2]), context=val[3]
+        )
+
+    print(context)
 
     SYSTEM_PROMPT = """
     You are a helpful assistant that answers user questions. You will use any context
@@ -164,8 +213,10 @@ def askrag(q, pid, eid):
 
     USER_PROMPT = """
     Based on the context enclosed in backticks below and in keeping with your role as 
-    a helpful assistant, please answer the question "%s" from a user. You will ignore 
-    any parts of the context that are not relevant to the question such as ad reads.
+    a helpful assistant, please answer the question "%s" from a user. Along with the 
+    response, you will also return the episodes and timecodes from where you got context
+    inputs. You will ignore any parts of the context that are not relevant to the question 
+    such as ad reads.
     `%s`
     """
 
@@ -179,17 +230,22 @@ def askrag(q, pid, eid):
                 },
                 {
                     "role": "user",
-                    "content": USER_PROMPT % (title, question, transcripttext),
+                    "content": USER_PROMPT % (question, context),
                 },
             ],
             stream=True,
         )
         for chunk in response:
-            yield f'data: {chunk.choices[0].delta.content or ""}\n\n'
+            yield f'{chunk.choices[0].delta.content or ""}'
+            # yield f'data: {chunk.choices[0].delta.content or ""}\n\n'
 
     response = generate_answer(question)
+    answer = StringIO()
     for data in response:
-        print(data)
+        answer.write(" " + data)
+
+    print(answer.getvalue())
+    # return Response(generate_answer(question), mimetype="text/event-stream")
     # return Response(generate_answer(question), mimetype="text/event-stream")
 
 
@@ -200,5 +256,8 @@ if __name__ == "__main__":
     episodeid = sys.argv[1]
     question = sys.argv[2]
 
+    # Send the question to openai with selected RAG context lines
+    askrag(question, 1, episodeid)
+
     # Send the question to openai with full text
-    askfulltext(question, 1, episodeid)
+    # askfulltext(question, 1, episodeid)

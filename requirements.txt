@@ -4,5 +4,6 @@ feedreader
 psycopg2
 feedparser
 azure-cognitiveservices-speech
+tiktoken
 requests
 ../python-client

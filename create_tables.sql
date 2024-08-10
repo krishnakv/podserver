@@ -37,3 +37,13 @@ CREATE TABLE IF NOT EXISTS episodes (
     transcripttext TEXT
 );
 
+CREATE TABLE IF NOT EXISTS simple_embeddings (
+   id SERIAL PRIMARY KEY,
+   podcastid INT,
+   episodeid INT,
+   timecode INTERVAL,
+   chunk TEXT,
+   embedding VECTOR(1536)
+ );
+
+
