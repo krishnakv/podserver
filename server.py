@@ -175,8 +175,8 @@ def ask():
 
     system_prompt = """
     You are a helpful assistant that answers user questions. You will use any context
-    provided and answer the questions as truthfully as possible. You will provide your
-    response in 200 words or less.
+    provided, if available, and answer the questions as truthfully as possible. You 
+    will provide your response in 200 words or less.
     """
     user_prompt = ""
 
