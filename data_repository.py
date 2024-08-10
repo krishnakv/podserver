@@ -56,6 +56,6 @@ class DataRepository:
             database=self.config["DB_NAME"],
             host=self.config["DB_HOST"],
             user=self.config["DB_USER"],
-            # password=self.config["DB_PASSWORD"],
+            password=self.config["DB_PASSWORD"],
             port=self.config["DB_PORT"],
         )
