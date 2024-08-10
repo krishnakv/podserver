@@ -16,7 +16,6 @@ release date.
 """
 
 import json
-import logging
 import sys
 import time
 from enum import Enum
@@ -51,12 +50,6 @@ class EpisodeAttributes(Enum):
 with open("config.json") as config_file:
     config = json.load(config_file)
 
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.DEBUG,
-    format="%(asctime)s %(message)s",
-    datefmt="%m/%d/%Y %I:%M:%S %p %Z",
-)
 
 client = AzureOpenAI(
     api_key=config["LLM_API_KEY"],
