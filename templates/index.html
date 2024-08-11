@@ -53,6 +53,17 @@
                       <div class="form-floating">
                         <textarea class="form-control mb-3" placeholder="Leave a comment here" id="question" style="height: 100px"></textarea>
                         <label for="question">Any questions?</label>
+                        <div class="btn-group">
+                            <button id="ddType" type="button" class="btn btn-info dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-type="rag">
+                            Mode: RAG
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" data-value="rag">RAG</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="fulltext">Full Text</a></li>
+                                <li><a class="dropdown-item" href="#" data-value="norag">No Context</a></li>
+                            </ul>
+                        </div>
+                        <button id="btnAnswerMe" type="button" class="btn btn-primary">Answer me</button>
                         <div id="answer"></div>
                       </div>
                     </div>
