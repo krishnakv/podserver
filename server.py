@@ -21,12 +21,14 @@ from string import Template
 
 import psycopg2
 from flask import Flask, Response, jsonify, render_template, request
+from flask_cors import CORS
 from openai import AzureOpenAI
 from psycopg2 import sql
 
 from data_repository import DataRepository
 
 app = Flask(__name__)
+CORS(app, origins=["http://localhost:5000"])
 app.config.from_file("config.json", load=json.load)
 client = AzureOpenAI(
     api_key=app.config["LLM_API_KEY"],
@@ -100,6 +102,7 @@ def get_episode(pid, eid):
 def select_from_episodes_with_episodeid(episodeid):
     # Read configuration from JSON file
     connection_string = f"dbname='{app.config["DBNAME"]}' user='{app.config["USER"]}' password='{app.config["PASS"]}' host='{app.config["HOST"]}' port='{app.config["PORT"]}'"
+    print(connection_string)
 
     # Connect to the PostgreSQL database
     conn = psycopg2.connect(connection_string)

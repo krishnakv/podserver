@@ -15,7 +15,7 @@ class DataRepository:
         pid = 1
         print("going to fetch episodes")
         cur.execute(
-            f"SELECT id, episodeid, title, summary, transcript, questions FROM episodes WHERE podcastid = {pid} and transcribed=true ORDER BY episodeid DESC LIMIT 15;"
+            f"SELECT id, episodeid, title, summary, questions FROM episodes WHERE podcastid = {pid} and transcribed=true ORDER BY episodeid DESC LIMIT 5;"
         )
         print("fetched episodes")
         rows = cur.fetchall()
@@ -23,7 +23,7 @@ class DataRepository:
 
         episodes = []
         for row in rows:
-            episode = Episode(row[1], row[2], row[3], row[4], row[5])
+            episode = Episode(row[1], row[2], row[3], "", row[4])
             # print(episode)
             episodes.append(episode)
 
@@ -39,11 +39,11 @@ class DataRepository:
 
         pid = 1
         cur.execute(
-            f"SELECT id, episodeid, title, summary, transcript, questions FROM episodes WHERE podcastid = {pid} and episodeid = {eid} and transcribed=true ORDER BY episodeid DESC;"
+            f"SELECT id, episodeid, title, summary,  questions FROM episodes WHERE podcastid = {pid} and episodeid = {eid} and transcribed=true ORDER BY episodeid DESC;"
         )
         row = cur.fetchone()
 
-        episode = Episode(row[1], row[2], row[3], row[4], row[5])
+        episode = Episode(row[1], row[2], row[3], "", row[4])
         # print(episode)
 
         cur.close()
