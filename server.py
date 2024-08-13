@@ -109,9 +109,9 @@ def select_from_episodes_with_episodeid(episodeid):
     cursor = conn.cursor()
 
     # Prepare and execute an SQL SELECT statement
-    select_query = sql.SQL("SELECT * FROM episodes WHERE episodeid = %s;").format(
-        sql.Identifier("episodes")
-    )
+    select_query = sql.SQL(
+        "SELECT * FROM episodes WHERE podcastid=1 AND episodeid = %s;"
+    ).format(sql.Identifier("episodes"))
 
     cursor.execute(select_query, (episodeid,))
 
@@ -146,7 +146,8 @@ def select_embeddings(text):
                    SELECT episodes.episodeid, episodes.title, simple_embeddings.timecode, simple_embeddings.chunk
                    FROM simple_embeddings
                    JOIN episodes
-                   ON simple_embeddings.episodeid = episodes.episodeid
+                   ON simple_embeddings.episodeid = episodes.episodeid AND simple_embeddings.podcastid = episodes.podcastid
+                   WHERE episodes.podcastid = 1
                    ORDER BY embedding <-> %s
                    LIMIT %s
                    """
