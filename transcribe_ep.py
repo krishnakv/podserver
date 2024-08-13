@@ -28,7 +28,7 @@ class EpisodeAttributes(Enum):
     TRANSCRIPTTEXT = 12
 
 
-def select_from_episodes_with_episodeid(episodeid):
+def select_from_episodes(podcastid, episodeid):
     # Read configuration from JSON file
     with open("config.json") as config_file:
         config = json.load(config_file)
@@ -40,11 +40,17 @@ def select_from_episodes_with_episodeid(episodeid):
     cursor = conn.cursor()
 
     # Prepare and execute an SQL SELECT statement
-    select_query = sql.SQL("SELECT * FROM episodes WHERE episodeid = %s;").format(
-        sql.Identifier("episodes")
-    )
+    select_query = sql.SQL(
+        "SELECT * FROM episodes WHERE podcastid = %s AND episodeid = %s;"
+    ).format(sql.Identifier("episodes"))
 
-    cursor.execute(select_query, (episodeid,))
+    cursor.execute(
+        select_query,
+        (
+            podcastid,
+            episodeid,
+        ),
+    )
 
     # Fetch and print the result of the SELECT statement
     result = cursor.fetchall()
@@ -160,6 +166,10 @@ MODEL_REFERENCE = None  # guid of a custom model
 
 def transcribe(podcastid, episodeid, title, audio_url):
     logging.info("Starting transcription client...")
+
+    if audio_url == "":
+        logging.info("Returning, no audio url found...")
+        return
 
     # Read configuration from JSON file
     with open("config.json") as config_file:
@@ -314,13 +324,13 @@ def transcribe(podcastid, episodeid, title, audio_url):
 if __name__ == "__main__":
 
     # accept from command line as input, the episodeid to transcribe
-    episodeid = sys.argv[1]
+    podcastid = sys.argv[1]
+    episodeid = sys.argv[2]
 
     # Call the function to select the episode from the database
-    result = select_from_episodes_with_episodeid(episodeid)
+    result = select_from_episodes(podcastid, episodeid)
     audio_url = result[EpisodeAttributes.URL.value]
     title = result[EpisodeAttributes.TITLE.value]
     # transcribe_episode_from_audio_url(audio_url)
 
-    # NOTE: podcastid is hardcoded to 1 as there is only a single one for now
-    transcribe(1, episodeid, title, audio_url)
+    transcribe(podcastid, episodeid, title, audio_url)
