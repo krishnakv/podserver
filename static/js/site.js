@@ -50,13 +50,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
             let btnAnswerMe = document.querySelector('#btnAnswerMe');
             btnAnswerMe.addEventListener('click', function(e) {
                 e.preventDefault();
-                document.querySelector('#answer').innerText = '';
+                document.querySelector('#answer').dataset.answer = '';
                 let q = document.querySelector('#question').value;
                 let eid = document.querySelector("#episodes a.active").dataset.id;
                 type=document.querySelector('#ddType').dataset.type;
                 let evtSource = new EventSource(`http://52.172.33.78:5000/ask?q=${q}&eid=${eid}&type=${type}`);
                 evtSource.onmessage = (event) => {
-                    document.querySelector('#answer').innerText += event.data;
+                    var converter = new showdown.Converter();
+                    document.querySelector('#answer').dataset.answer += event.data;
+                    document.querySelector('#answer').innerHTML = converter.makeHtml(document.querySelector('#answer').dataset.answer);
                 };
                 evtSource.onerror = (error) => {
                     evtSource.close();
