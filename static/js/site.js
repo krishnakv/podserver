@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
                                 document.querySelector('#suggestedQs div').appendChild(q_node);
                                 a_node.addEventListener('click', function(e) {
                                     e.preventDefault();
-                                    document.querySelector('#question').innerText = q;
+                                    document.querySelector('#question').value = q;
                                     document.querySelector('#btnAnswerMe').click();
                                 });
                             });
@@ -51,11 +51,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
             btnAnswerMe.addEventListener('click', function(e) {
                 e.preventDefault();
                 document.querySelector('#answer').innerText = '';
-                let q = document.querySelector('#question').textContent;
+                let q = document.querySelector('#question').value;
                 let eid = document.querySelector("#episodes a.active").dataset.id;
-                console.log(eid);
                 type=document.querySelector('#ddType').dataset.type;
-                console.log(type);
                 let evtSource = new EventSource(`http://52.172.33.78:5000/ask?q=${q}&eid=${eid}&type=${type}`);
                 evtSource.onmessage = (event) => {
                     document.querySelector('#answer').innerText += event.data;
@@ -71,6 +69,16 @@ document.addEventListener("DOMContentLoaded", function(event) {
                     console.log(e.target.dataset.value);
                     document.querySelector('#ddType').dataset.type = e.target.dataset.value;
                 });
+            });
+
+            document.querySelector('#question').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.querySelector('#btnAnswerMe').click();
+                }
+            });
+            document.querySelector('#question').addEventListener('focus', function(e) {
+                document.querySelector('#question').value = '';
             });
         });
 });
