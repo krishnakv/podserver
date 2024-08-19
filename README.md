@@ -12,7 +12,7 @@ The architecture is a flask server backed by a Postgresql database. Flask is use
 ## The scripts to run one-time for setup of the application and podcast are:
 1. `create_tables.sql` is the script that creates all tables in Postgressl.
 2. `rssconvert.py` takes the initial downloaded rss feed to populate all episode data in the DB. This has to be done once using the full RSS feed.
-3. `transcripe_ep.py` accepts an episode ID and populates the DB with transcript and sample questions.
+3. `transcribe_ep.py` accepts an episode ID and populates the DB with transcript and sample questions.
 4. `gen-embeddings-simple.py` accepts and episode ID and populated the DB wtih embeddings for that episode.
 
 ## Running the Flask server
